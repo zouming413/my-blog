@@ -42,7 +42,9 @@ async function fetchFromFootballData() {
         competition: match.competition.name,
         homeTeam: '曼联',
         awayTeam: opponent.name,
-        isHome: isHome
+        isHome: isHome,
+        liveUrl: 'https://haixing1.com/live',  // 海星直播
+        replayUrl: 'https://www.miguvideo.com/p/home/0c40bbc85fa345bbba20f8e5fd11a922',  // 咪咕录播
       }
     }) || []
   } catch (error) {
