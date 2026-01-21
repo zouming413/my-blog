@@ -59,14 +59,19 @@ import { manUnitedMatches as localMatches } from '../../../lib/matches'
 export async function GET() {
   // 尝试从API获取
   let matches = await fetchFromFootballData()
+  let source = 'local' // 默认本地数据
 
-  // 如果API失败，使用本地数据
-  if (!matches || matches.length === 0) {
+  // 如果API成功获取数据
+  if (matches && matches.length > 0) {
+    source = 'api'
+  } else {
+    // 使用本地数据
     matches = localMatches.map(match => ({
       ...match,
       homeTeam: '曼联',
       isHome: match.venue === '老特拉福德球场'
     }))
+    source = 'local'
   }
 
   // 获取下一场比赛
@@ -84,6 +89,6 @@ export async function GET() {
     match: nextMatch,
     isLive,
     allMatches: matches,
-    source: matches === localMatches ? 'local' : 'api'
+    source: source
   })
 }
