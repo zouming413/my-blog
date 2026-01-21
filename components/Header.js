@@ -6,7 +6,7 @@ export default function Header() {
       <div className="container mx-auto px-4 py-4">
         <nav className="flex items-center justify-between max-w-5xl mx-auto">
           <Link href="/" className="text-xl font-semibold text-gray-900">
-            MyBlog
+            ZM
           </Link>
 
           <ul className="flex gap-8 items-center">
