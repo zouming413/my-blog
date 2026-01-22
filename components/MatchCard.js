@@ -116,7 +116,7 @@ export default function MatchCard() {
         <div className="flex items-center justify-between">
           <span className="text-gray-700 font-medium">时间</span>
           <span className="text-gray-900 font-medium">
-            {match.date} {match.time} (UTC)
+            {match.date} {match.time} (北京时间)
           </span>
         </div>
 

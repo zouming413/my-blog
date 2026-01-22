@@ -34,10 +34,20 @@ async function fetchFromFootballData() {
       const isHome = match.homeTeam.id === parseInt(MAN_UTD_ID)
       const opponent = isHome ? match.awayTeam : match.homeTeam
 
+      // UTC 时间转北京时间
+      const utcDate = new Date(match.utcDate)
+      const beijingDate = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000) // UTC+8
+
+      const year = beijingDate.getFullYear()
+      const month = String(beijingDate.getMonth() + 1).padStart(2, '0')
+      const day = String(beijingDate.getDate()).padStart(2, '0')
+      const hour = String(beijingDate.getHours()).padStart(2, '0')
+      const minute = String(beijingDate.getMinutes()).padStart(2, '0')
+
       return {
         opponent: opponent.name,
-        date: match.utcDate.split('T')[0],
-        time: match.utcDate.split('T')[1].substring(0, 5),
+        date: `${year}-${month}-${day}`,
+        time: `${hour}:${minute}`,
         venue: isHome ? '老特拉福德球场' : opponent.name.replace('FC', '').replace('United', '').trim() + '球场',
         competition: match.competition.name,
         homeTeam: '曼联',
@@ -81,9 +91,9 @@ export async function GET() {
     return matchDate > now
   }) || matches[0]
 
-  // 判断是否在直播时间（北京时间 20:00-21:00，即 UTC 12:00-13:00）
+  // 判断是否在直播时间（北京时间 20:00-21:00）
   const hour = parseInt(nextMatch.time.split(':')[0])
-  const isLive = hour >= 12 && hour <= 13
+  const isLive = hour >= 20 && hour <= 21
 
   return NextResponse.json({
     match: nextMatch,
