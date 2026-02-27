@@ -1,18 +1,19 @@
 'use client'
 
-import { useState } from 'react'
-import MatchCardWrapper from '../components/MatchCardWrapper'
-import PokerTable from '../components/poker/PokerTable'
-import OnlinePokerTable from '../components/poker/OnlinePokerTable'
+import { useState, useEffect } from 'react'
 import { io } from 'socket.io-client'
+import PokerTable from '../../components/poker/PokerTable'
+import OnlinePokerTable from '../../components/poker/OnlinePokerTable'
 
-export default function Home() {
-  // 联机游戏状态
+export default function PokerPage() {
+  const [mode, setMode] = useState(null) // null, 'local', 'online'
   const [onlineGame, setOnlineGame] = useState(null)
-  const [gamePhase, setGamePhase] = useState('lobby')
+  const [gamePhase, setGamePhase] = useState('lobby') // 'lobby', 'playing', 'gameover'
+
+  // 联机游戏状态
   const [playerName, setPlayerName] = useState('')
   const [roomId, setRoomId] = useState('')
-  const [lobbyMode, setLobbyMode] = useState('create')
+  const [lobbyMode, setLobbyMode] = useState('create') // 'create' or 'join'
   const [playerCount, setPlayerCount] = useState(2)
   const [startingChips, setStartingChips] = useState(1000)
   const [error, setError] = useState('')
@@ -88,31 +89,48 @@ export default function Home() {
     })
   }
 
-  const handleExitGame = () => {
-    if (onlineGame?.socket) {
-      onlineGame.socket.disconnect()
-    }
-    setOnlineGame(null)
+  const handleBackToLobby = () => {
     setGamePhase('lobby')
+    setOnlineGame(null)
     setPlayerName('')
     setRoomId('')
     setError('')
   }
 
-  // 联机游戏进行中 - 全屏显示
-  if (gamePhase === 'playing' && onlineGame) {
+  const handleExitGame = () => {
+    if (onlineGame?.socket) {
+      onlineGame.socket.disconnect()
+    }
+    setMode(null)
+    setGamePhase('lobby')
+    setOnlineGame(null)
+    setPlayerName('')
+    setRoomId('')
+    setError('')
+  }
+
+  // 本地游戏
+  if (mode === 'local') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        <div className="max-w-7xl mx-auto p-4">
-          {/* 返回按钮 */}
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-8">
+        <div className="max-w-7xl mx-auto px-4">
           <button
-            onClick={handleExitGame}
-            className="mb-4 px-6 py-3 bg-white/10 backdrop-blur border border-white/20 text-white rounded-xl hover:bg-white/20 transition-all flex items-center gap-2"
+            onClick={() => setMode(null)}
+            className="mb-6 px-6 py-3 bg-white/10 backdrop-blur text-white rounded-xl hover:bg-white/20 transition-all flex items-center gap-2"
           >
             <span>←</span>
-            <span>返回首页</span>
+            <span>返回</span>
           </button>
+          <PokerTable />
         </div>
+      </div>
+    )
+  }
+
+  // 联机游戏进行中
+  if (mode === 'online' && gamePhase === 'playing' && onlineGame) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         <OnlinePokerTable
           socket={onlineGame.socket}
           roomId={onlineGame.roomId}
@@ -125,105 +143,73 @@ export default function Home() {
     )
   }
 
-  // 主界面 - 所有内容在一个页面
+  // 主界面
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-12">
-      {/* 顶部标题 */}
-      <div className="max-w-7xl mx-auto px-4 mb-12">
-        <div className="text-center">
-          <h1 className="text-6xl font-bold text-white mb-4">
-            🎮 我的娱乐中心
+      <div className="max-w-5xl mx-auto px-4">
+        {/* 标题 */}
+        <div className="text-center mb-12">
+          <h1 className="text-6xl font-bold text-white mb-4 tracking-tight">
+            🃏 德州扑克
           </h1>
-          <p className="text-2xl text-purple-200">Games & Sports Hub</p>
-          <p className="text-purple-300 mt-2">足球 · 游戏 · 娱乐</p>
+          <p className="text-xl text-purple-200">Texas Hold'em Poker</p>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 space-y-16">
-        {/* 曼联比赛区域 */}
-        <section className="animate-fadeIn">
-          <div className="text-center mb-8">
-            <h2 className="text-4xl font-bold text-white mb-3 flex items-center justify-center gap-3">
-              <span>⚽</span>
-              <span>曼联比赛</span>
-            </h2>
-            <p className="text-purple-200">Manchester United Live Matches</p>
-          </div>
-          <div className="flex justify-center">
-            <MatchCardWrapper />
-          </div>
-        </section>
+        {/* 模式选择卡片 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* 本地游戏 */}
+          <button
+            onClick={() => setMode('local')}
+            className="group relative p-8 bg-white/5 backdrop-blur rounded-3xl border-2 border-white/10 hover:border-white/30 hover:bg-white/10 transition-all duration-300"
+          >
+            <div className="text-6xl mb-4 transform group-hover:scale-110 transition-transform">
+              🎮
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-3">本地游戏</h3>
+            <p className="text-purple-200">
+              与AI对手对战，练习牌技
+            </p>
+            <div className="mt-4 flex items-center text-purple-300 text-sm">
+              <span>立即开始</span>
+              <span className="ml-2 transform group-hover:translate-x-1 transition-transform">→</span>
+            </div>
+          </button>
 
-        {/* 分隔线 */}
-        <div className="border-t border-white/10"></div>
+          {/* 线上联机 */}
+          <button
+            onClick={() => setMode('online')}
+            className="group relative p-8 bg-white/5 backdrop-blur rounded-3xl border-2 border-white/10 hover:border-white/30 hover:bg-white/10 transition-all duration-300"
+          >
+            <div className="text-6xl mb-4 transform group-hover:scale-110 transition-transform">
+              🌐
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-3">线上联机</h3>
+            <p className="text-purple-200">
+              创建或加入房间，与朋友在线对战
+            </p>
+            <div className="mt-4 flex items-center text-purple-300 text-sm">
+              <span>创建房间</span>
+              <span className="ml-2 transform group-hover:translate-x-1 transition-transform">→</span>
+            </div>
+          </button>
+        </div>
 
-        {/* 本地德州扑克区域 */}
-        <section className="animate-fadeIn">
-          <div className="text-center mb-8">
-            <h2 className="text-4xl font-bold text-white mb-3 flex items-center justify-center gap-3">
-              <span>🎮</span>
-              <span>本地德州扑克</span>
-            </h2>
-            <p className="text-purple-200">Texas Hold'em - Practice with AI</p>
-          </div>
-          <PokerTable />
-        </section>
-
-        {/* 分隔线 */}
-        <div className="border-t border-white/10"></div>
-
-        {/* 在线德州扑克区域 */}
-        <section className="animate-fadeIn pb-12">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-3 flex items-center justify-center gap-3">
-              <span>🌐</span>
-              <span>在线德州扑克</span>
-            </h2>
-            <p className="text-purple-200">Play Online with Friends</p>
-          </div>
-
-          {/* 模式选择卡片 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 max-w-4xl mx-auto">
-            {/* 创建房间 */}
+        {/* 联机游戏设置面板 */}
+        {mode === 'online' && gamePhase === 'lobby' && (
+          <div className="animate-fadeIn">
+            {/* 返回按钮 */}
             <button
-              onClick={() => setLobbyMode('create')}
-              className={`group p-8 rounded-3xl border-2 transition-all ${
-                lobbyMode === 'create'
-                  ? 'bg-blue-500/20 border-blue-400'
-                  : 'bg-white/5 border-white/10 hover:border-white/30 hover:bg-white/10'
-              }`}
+              onClick={() => setMode(null)}
+              className="mb-6 px-6 py-3 bg-white/10 backdrop-blur text-white rounded-xl hover:bg-white/20 transition-all flex items-center gap-2"
             >
-              <div className="text-6xl mb-4 transform group-hover:scale-110 transition-transform">
-                🎮
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-3">创建房间</h3>
-              <p className="text-purple-200">
-                创建新房间，邀请朋友加入对战
-              </p>
+              <span>←</span>
+              <span>返回</span>
             </button>
 
-            {/* 加入房间 */}
-            <button
-              onClick={() => setLobbyMode('join')}
-              className={`group p-8 rounded-3xl border-2 transition-all ${
-                lobbyMode === 'join'
-                  ? 'bg-green-500/20 border-green-400'
-                  : 'bg-white/5 border-white/10 hover:border-white/30 hover:bg-white/10'
-              }`}
-            >
-              <div className="text-6xl mb-4 transform group-hover:scale-110 transition-transform">
-                🚪
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-3">加入房间</h3>
-              <p className="text-purple-200">
-                输入房间号，加入朋友的游戏
-              </p>
-            </button>
-          </div>
-
-          {/* 游戏设置面板 */}
-          <div className="max-w-2xl mx-auto">
+            {/* 大厅卡片 */}
             <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 border border-white/20">
+              <h2 className="text-3xl font-bold text-white mb-8 text-center">线上对战</h2>
+
               {/* 玩家名字 */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-purple-200 mb-2">
@@ -236,6 +222,33 @@ export default function Home() {
                   placeholder="输入你的名字"
                   className="w-full px-4 py-3 bg-white/10 border-2 border-white/20 rounded-xl focus:border-white/40 focus:ring-2 focus:ring-white/20 outline-none text-white placeholder-purple-300"
                 />
+              </div>
+
+              {/* 创建/加入切换 */}
+              <div className="flex gap-4 mb-6">
+                <button
+                  onClick={() => setLobbyMode('create')}
+                  className={`flex-1 p-4 rounded-xl border-2 transition-all ${
+                    lobbyMode === 'create'
+                      ? 'border-blue-400 bg-blue-500/20 text-white'
+                      : 'border-white/20 hover:border-white/30 bg-white/5 text-purple-200'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">🎮</div>
+                  <div className="font-semibold">创建房间</div>
+                </button>
+
+                <button
+                  onClick={() => setLobbyMode('join')}
+                  className={`flex-1 p-4 rounded-xl border-2 transition-all ${
+                    lobbyMode === 'join'
+                      ? 'border-green-400 bg-green-500/20 text-white'
+                      : 'border-white/20 hover:border-white/30 bg-white/5 text-purple-200'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">🚪</div>
+                  <div className="font-semibold">加入房间</div>
+                </button>
               </div>
 
               {lobbyMode === 'create' ? (
@@ -328,21 +341,13 @@ export default function Home() {
               {/* 说明 */}
               <div className="mt-6 p-4 bg-white/5 rounded-xl">
                 <p className="text-sm text-purple-200 text-center">
-                  💡 {lobbyMode === 'create'
-                    ? '创建房间后，将房间号分享给朋友即可开始游戏'
-                    : '输入朋友分享的房间号加入游戏'}
+                  💡 创建房间后，将房间号分享给朋友即可开始游戏
                 </p>
               </div>
             </div>
           </div>
-        </section>
+        )}
       </div>
-
-      {/* 页脚 */}
-      <footer className="text-center py-12 text-purple-300 text-sm">
-        <p className="mb-2">🎮 享受游戏时光 | ⚽ 关注曼联比赛 | 🃏 德州扑克</p>
-        <p className="text-purple-400">Made with ❤️</p>
-      </footer>
 
       <style jsx>{`
         @keyframes fadeIn {
@@ -356,7 +361,7 @@ export default function Home() {
           }
         }
         .animate-fadeIn {
-          animation: fadeIn 0.5s ease-out;
+          animation: fadeIn 0.3s ease-out;
         }
       `}</style>
     </div>

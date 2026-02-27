@@ -34,15 +34,18 @@ async function fetchFromFootballData() {
       const isHome = match.homeTeam.id === parseInt(MAN_UTD_ID)
       const opponent = isHome ? match.awayTeam : match.homeTeam
 
-      // UTC 时间转北京时间
+      // UTC 时间转北京时间 (UTC+8)
+      // 直接解析UTC时间字符串，手动加8小时
       const utcDate = new Date(match.utcDate)
-      const beijingDate = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000) // UTC+8
+      const beijingTimestamp = utcDate.getTime() + 8 * 60 * 60 * 1000
+      const beijingTime = new Date(beijingTimestamp)
 
-      const year = beijingDate.getFullYear()
-      const month = String(beijingDate.getMonth() + 1).padStart(2, '0')
-      const day = String(beijingDate.getDate()).padStart(2, '0')
-      const hour = String(beijingDate.getHours()).padStart(2, '0')
-      const minute = String(beijingDate.getMinutes()).padStart(2, '0')
+      // 使用UTC方法获取时间（避免本地时区干扰）
+      const year = beijingTime.getUTCFullYear()
+      const month = String(beijingTime.getUTCMonth() + 1).padStart(2, '0')
+      const day = String(beijingTime.getUTCDate()).padStart(2, '0')
+      const hour = String(beijingTime.getUTCHours()).padStart(2, '0')
+      const minute = String(beijingTime.getUTCMinutes()).padStart(2, '0')
 
       return {
         opponent: opponent.name,

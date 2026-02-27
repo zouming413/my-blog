@@ -3,16 +3,23 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
-export default function MatchCard() {
-  const [match, setMatch] = useState(null)
-  const [isLive, setIsLive] = useState(false)
+export default function MatchCardClient({ initialMatch, initialIsLive, initialSource }) {
+  const [match, setMatch] = useState(initialMatch)
+  const [isLive, setIsLive] = useState(initialIsLive)
   const [countdown, setCountdown] = useState('')
-  const [dataSource, setDataSource] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [dataSource, setDataSource] = useState(initialSource)
+  const [loading, setLoading] = useState(!initialMatch)
   const [error, setError] = useState(false)
 
   useEffect(() => {
-    // 获取比赛数据
+    // 如果服务器端已经提供了数据，直接使用
+    if (initialMatch) {
+      updateCountdown(initialMatch)
+      const interval = setInterval(() => updateCountdown(initialMatch), 60000)
+      return () => clearInterval(interval)
+    }
+
+    // 否则客户端获取数据
     async function fetchMatch() {
       try {
         console.log('Fetching match data...')
@@ -20,7 +27,6 @@ export default function MatchCard() {
         const data = await response.json()
         console.log('Match data received:', data)
 
-        // 如果没有比赛数据，不显示组件
         if (!data.match || !data.match.opponent) {
           console.error('No match data in response:', data)
           setError(true)
@@ -33,33 +39,8 @@ export default function MatchCard() {
         setIsLive(data.isLive)
         setDataSource(data.source)
         setLoading(false)
-
-        // 计算倒计时
-        const matchDate = new Date(`${data.match.date}T${data.match.time}:00`)
-        const updateCountdown = () => {
-          const now = new Date()
-          const diff = matchDate - now
-
-          if (diff > 0) {
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-
-            if (days > 0) {
-              setCountdown(`${days}天 ${hours}小时`)
-            } else if (hours > 0) {
-              setCountdown(`${hours}小时 ${minutes}分钟`)
-            } else {
-              setCountdown(`${minutes}分钟`)
-            }
-          } else {
-            setCountdown('比赛进行中')
-          }
-        }
-
-        updateCountdown()
-        const interval = setInterval(updateCountdown, 60000)
-
+        updateCountdown(data.match)
+        const interval = setInterval(() => updateCountdown(data.match), 60000)
         return () => clearInterval(interval)
       } catch (err) {
         console.error('Failed to fetch match:', err)
@@ -69,9 +50,30 @@ export default function MatchCard() {
     }
 
     fetchMatch()
-  }, [])
+  }, [initialMatch])
 
-  // 加载中
+  function updateCountdown(matchData) {
+    const matchDate = new Date(`${matchData.date}T${matchData.time}:00`)
+    const now = new Date()
+    const diff = matchDate - now
+
+    if (diff > 0) {
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+
+      if (days > 0) {
+        setCountdown(`${days}天 ${hours}小时`)
+      } else if (hours > 0) {
+        setCountdown(`${hours}小时 ${minutes}分钟`)
+      } else {
+        setCountdown(`${minutes}分钟`)
+      }
+    } else {
+      setCountdown('比赛进行中')
+    }
+  }
+
   if (loading) {
     return (
       <div className="card rounded-2xl p-8 animate-pulse">
@@ -82,7 +84,6 @@ export default function MatchCard() {
     )
   }
 
-  // 出错时显示错误信息（用于调试）
   if (error) {
     return (
       <div className="card rounded-2xl p-8 bg-red-50 border-red-200">
